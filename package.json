@@ -4,14 +4,14 @@
   "description": "check-serch-order",
   "main": "src/index.ts",
   "scripts": {
-    "start": "node ./dist/index.js",
+    "start": "node ./dist/src/index.js",
     "watch": "tsc-watch --onSuccess \"npm start\"",
     "prebuild": "rimraf dist",
     "build": "npm-run-all --parallel lint:fix test:no-coverage compile",
     "compile": "tsc",
     "lint:fix": "eslint --ext .ts --fix src/",
     "test:no-coverage": "jest --no-coverage",
-    "postbuild": "rm ./dist/**/*.test.js* && echo \"build successful!!\"",
+    "postbuild": "rm ./dist/**/**/*.test.js* && echo \"build successful!!\"",
     "test": "jest",
     "test:dev": "jest --watch --no-coverage"
   },

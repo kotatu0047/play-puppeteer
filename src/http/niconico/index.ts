@@ -1,6 +1,7 @@
 import { Browser, Page } from 'puppeteer'
 import config from '../../config/config'
 import { Result } from '../../common/sheardType'
+import * as fs from 'fs'
 
 interface WithHiddenMethod {
   mouse: {
@@ -37,10 +38,14 @@ async function* extractionComments(page: Page, commentCount: number) {
   }, config.niconico.commentPanelDataGridBody)
 
   await page.click(config.niconico.commentSelector)
-  await page.waitForSelector(config.niconico.commentSelector)
+  await page.waitForSelector(config.niconico.commentSelector, {
+    timeout: config.timeout,
+  })
 
   for (let scroll = 0; scroll <= commentCount * 10; scroll += 200) {
-    await page.waitForSelector(config.niconico.commentPanelDataGridBody)
+    await page.waitForSelector(config.niconico.commentPanelDataGridBody, {
+      timeout: config.timeout,
+    })
 
     const displayComments = await page.evaluate(selector => {
       return Array.from(
@@ -53,7 +58,9 @@ async function* extractionComments(page: Page, commentCount: number) {
       [1700, 500],
       [1700, 600],
     )
-    await page.waitForSelector(config.niconico.commentPanelDataGridBody)
+    await page.waitForSelector(config.niconico.commentPanelDataGridBody, {
+      timeout: config.timeout,
+    })
 
     yield displayComments
   }
@@ -63,6 +70,10 @@ const fetchComments = async (
   browser: Browser,
   movieId: string,
 ): Promise<Result<Array<string>>> => {
+  console.log(`start at ${movieId}`)
+
+  if (movieId === 'sm36400628') throw new Error('sm36400628')
+
   const page = await browser.newPage()
   await page.setViewport({
     width: 1920,
@@ -90,16 +101,20 @@ const fetchComments = async (
 
   await page.goto(
     `${config.niconico.rootUrl}/${config.niconico.movieUrl}/${movieId}`,
-    { waitUntil: 'networkidle2' },
+    { waitUntil: 'networkidle2', timeout: config.timeout },
   )
 
   await page.evaluate(selector => {
     return document.querySelector<HTMLDivElement>(selector)?.click()
   }, config.niconico.commentList)
-  await page.waitForSelector(config.niconico.commentList)
+  await page.waitForSelector(config.niconico.commentList, {
+    timeout: config.timeout,
+  })
 
   await page.click(config.niconico.commentPanelAutoScrollButton)
-  await page.waitForSelector(config.niconico.commentPanelAutoScrollButton)
+  await page.waitForSelector(config.niconico.commentPanelAutoScrollButton, {
+    timeout: config.timeout,
+  })
 
   const commentCount = await page.evaluate(selector => {
     const count = document.querySelector<HTMLSpanElement>(selector)?.textContent
@@ -124,6 +139,12 @@ const fetchComments = async (
   await page.close()
 
   console.log(`Fetch commentCount as ===>${comments.length}`)
+
+  fs.writeFile(`${movieId}.json`, JSON.stringify(result), err => {
+    if (err) {
+      console.log(err)
+    }
+  })
 
   return {
     success: true,

@@ -1,6 +1,8 @@
+import * as fs from 'fs'
+import puppeteer from 'puppeteer'
 import messages from './resources/messages'
 import fetchComments from './http/niconico'
-import puppeteer from 'puppeteer'
+import { getAppConfig } from './json/appConfig'
 
 const printEndPrompt = (hasError: boolean) => {
   const msg = hasError ? messages.errorEnd : messages.end
@@ -12,13 +14,25 @@ const main = async () => {
   console.log(messages.separator)
   console.log(messages.connectionStart)
 
-  try {
-    const browser = await puppeteer.launch()
-    await fetchComments(browser, 'sm36240487')
+  const browser = await puppeteer.launch()
 
-    await browser.close()
+  try {
+    const config = getAppConfig()
+    const promises = config.targets.map(target => {
+      return fetchComments(browser, target)
+        .then(result => result)
+        .catch(err => err)
+    })
+
+    const results = await Promise.all(promises)
+      .then(result => result)
+      .catch(err => console.log(err))
+
+    fs.writeFileSync('foo.json', JSON.stringify(results))
   } catch (e) {
     console.log(e)
+  } finally {
+    await browser.close()
   }
 
   console.log(messages.separator)

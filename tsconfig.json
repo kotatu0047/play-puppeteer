@@ -30,8 +30,7 @@
   },
   "include": [
     "src/**/*",
-    "src/resources/**/*",
-    "src/config/**/*"
+    "app.config.json"
   ],
   "exclude": [
     "node_modules"
