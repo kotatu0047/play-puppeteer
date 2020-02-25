@@ -1,7 +1,11 @@
-import { Browser, Page } from 'puppeteer'
-import config from '../../config/config'
-import { Result } from '../../common/sheardType'
 import * as fs from 'fs'
+import puppeteer, { Browser, Page } from 'puppeteer'
+import config from '../../config/config'
+
+export type fetchCommentsResult = {
+  movieId: string
+  comments: string[]
+}
 
 interface WithHiddenMethod {
   mouse: {
@@ -69,10 +73,8 @@ async function* extractionComments(page: Page, commentCount: number) {
 const fetchComments = async (
   browser: Browser,
   movieId: string,
-): Promise<Result<Array<string>>> => {
+): Promise<Array<string>> => {
   console.log(`start at ${movieId}`)
-
-  if (movieId === 'sm36400628') throw new Error('sm36400628')
 
   const page = await browser.newPage()
   await page.setViewport({
@@ -146,10 +148,27 @@ const fetchComments = async (
     }
   })
 
-  return {
-    success: true,
-    payload: result,
-  }
+  return result
 }
+
+const wrap = async (movieId: string): Promise<fetchCommentsResult> => {
+  const browser = await puppeteer.launch()
+  let result: string[]
+  try {
+    result = await fetchComments(browser, movieId)
+  } finally {
+    await browser.close()
+  }
+
+  return { comments: result, movieId: movieId }
+}
+
+process.on('message', target => {
+  wrap(target).then(result => {
+    if (process.send) {
+      process.send(result)
+    }
+  })
+})
 
 export default fetchComments
