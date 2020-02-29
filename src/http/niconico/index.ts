@@ -134,21 +134,17 @@ const fetchComments = async (
     comments.push(...extractionComment)
   }
 
-  const result = comments.filter(
-    (comment): comment is string => comment !== null,
-  )
-
   await page.close()
 
   console.log(`Fetch commentCount as ===>${comments.length}`)
 
-  fs.writeFile(`${movieId}.json`, JSON.stringify(result), err => {
+  fs.writeFile(`${movieId}.json`, JSON.stringify(comments), err => {
     if (err) {
       console.log(err)
     }
   })
 
-  return result
+  return comments
 }
 
 const wrap = async (movieId: string): Promise<fetchCommentsResult> => {
